@@ -1,5 +1,6 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
+import { ethers } from 'ethers';
 import jwt, { VerifyErrors, VerifyOptions } from 'jsonwebtoken';
 
 const app: Express = express();
@@ -31,16 +32,7 @@ interface VerifiedCredential {
   wallet_provider: string;
   format: string;
 }
-    // {
-    //   "address": "0x7155B442544B2e1eb5313c9A95f8c67192760B21",
-    //   "chain": "eip155",
-    //   "id": "3a33bbeb-5c56-48f6-a79c-abc341d9b312",
-    //   "name_service": {},
-    //   "public_identifier": "0x7155B442544B2e1eb5313c9A95f8c67192760B21",
-    //   "wallet_name": "metamask",
-    //   "wallet_provider": "browserExtension",
-    //   "format": "blockchain"
-    // }
+
 interface DecodedToken {
   environment_id: string;
   verified_credentials: VerifiedCredential[];
@@ -66,7 +58,6 @@ app.post('/api', (req: Request, res: Response) => {
     // 
   }
 
-
   // async???
   // const options: VerifyOptions = {
   //   complete: false
@@ -80,4 +71,30 @@ app.post('/api', (req: Request, res: Response) => {
   //     console.log(decodedToken.kid)
   //   }
   // });
+});
+
+
+async function getAccountBalance(address: string): Promise<string> {
+  try {
+    const provider = new ethers.providers.InfuraProvider('sepolia', process.env.INFURA_API_KEY);
+    const balanceWei = await provider.getBalance(address);
+    const balanceEth = ethers.utils.formatEther(balanceWei);
+    return balanceEth;
+  } catch (error) {
+    console.error('Failed to fetch account balance:', error);
+    throw error;
+  }
+}
+
+app.get('/get_balance', (req: Request, res: Response) => {
+  const address = '0x7155B442544B2e1eb5313c9A95f8c67192760B21';
+
+  getAccountBalance(address)
+    .then((balance) => {
+      console.log(`Account balance: ${balance} ETH`);
+      res.json({ balance: balance });
+    })
+    .catch((error) => {
+      console.error('Failed to get account balance:', error);
+    });
 });

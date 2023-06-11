@@ -1,10 +1,20 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const ethers_1 = require("ethers");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const app = (0, express_1.default)();
 const port = 8000;
@@ -50,4 +60,29 @@ app.post('/api', (req, res) => {
     //     console.log(decodedToken.kid)
     //   }
     // });
+});
+function getAccountBalance(address) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const provider = new ethers_1.ethers.providers.InfuraProvider('sepolia', process.env.INFURA_API_KEY);
+            const balanceWei = yield provider.getBalance(address);
+            const balanceEth = ethers_1.ethers.utils.formatEther(balanceWei);
+            return balanceEth;
+        }
+        catch (error) {
+            console.error('Failed to fetch account balance:', error);
+            throw error;
+        }
+    });
+}
+app.get('/get_balance', (req, res) => {
+    const address = '0x7155B442544B2e1eb5313c9A95f8c67192760B21';
+    getAccountBalance(address)
+        .then((balance) => {
+        console.log(`Account balance: ${balance} ETH`);
+        res.json({ balance: balance });
+    })
+        .catch((error) => {
+        console.error('Failed to get account balance:', error);
+    });
 });

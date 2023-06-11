@@ -24,6 +24,7 @@
     "@types/node": "^20.2.5",
     "concurrently": "^8.2.0",
     "nodemon": "^2.0.22",
+    "typechain": "^8.2.0",
     "typescript": "^5.1.3"
   }
 }

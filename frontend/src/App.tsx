@@ -76,20 +76,54 @@ const Home = () =>  (
   </DynamicContextProvider>
 );
 
-// getBalance() →  balance: number (get the current balance on the wallet
+// getBalance() →  balance: number (get the current balance on the wallet)
 const GetBalance = () => {
+  const {
+    authToken
+  } = useDynamicContext();
 
+  const [token, setToken] = useState(null);
+  const [balance, setBalance] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchApi = async () => {
+      await fetch("http://localhost:8000/api", {
+        method: 'POST',
+        headers: {
+          Authorization: `${authToken}`,
+        },
+      }).then(response => response.json()).then(setToken);
+    }
+  
+    fetchApi()
+  }, [authToken]);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/get_balance")
+      .then((res) => res.json())
+      .then((data) => setBalance(data.balance));
+  }, []);
+
+  return (
+    <div className="GetBalance">
+      <p>Account balance: {balance} ETH</p>
+    </div>
+  );
 }
 
 // signMessage(msg: string) → signedMessage: string (The signed message with the private key) 
-// sendTransaction(to: string, amount: number) → transactionHash: string (sends a transaction on the blockchain)
+const SignMessage = () => {
+}
 
+// sendTransaction(to: string, amount: number) → transactionHash: string (sends a transaction on the blockchain)
+const SendTransaction = () => {
+}
 
 const App = () => (
   <Router>
     <Routes>
       <Route path="/" element={<Home />} />
-      {/* <Route path="/getBalance" element={<GetBalance />} /> */}
+      <Route path="/get_balance" element={<GetBalance />} />
     </Routes>
   </Router>
 );
