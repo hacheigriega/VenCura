@@ -17,7 +17,7 @@ const ProcessJWT = () => {
   } = useDynamicContext();
 
   const [token, setToken] = useState(null);
-  // const jwt = authToken;
+
   useEffect(() => {
     const fetchApi = async () => {
       await fetch("http://localhost:8000/api", {
@@ -66,7 +66,7 @@ const ProcessJWT = () => {
   );
 };
 
-const Home = () =>  (
+const Home = () => (
   <DynamicContextProvider
     settings={{
       environmentId: 'bcb3329d-6355-4410-bd2e-d9ff163a151e'
@@ -99,9 +99,12 @@ const GetBalance = () => {
   }, [authToken]);
 
   useEffect(() => {
-    fetch("http://localhost:8000/get_balance")
-      .then((res) => res.json())
-      .then((data) => setBalance(data.balance));
+    fetch("http://localhost:8000/get_balance", {
+        method: 'GET',
+        headers: {
+          Authorization: `${authToken}`,
+        }
+    }).then((res) => res.json()).then((data) => setBalance(data.balance));
   }, []);
 
   return (
