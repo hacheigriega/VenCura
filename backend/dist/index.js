@@ -16,51 +16,58 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const ethers_1 = require("ethers");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const dotenv_1 = __importDefault(require("dotenv"));
+const database_service_1 = require("./services/database.service");
+const users_router_1 = require("./routes/users.router");
+dotenv_1.default.config();
+const dynamicPubKey = process.env.DYNAMIC_PUB_KEY;
+// App
 const app = (0, express_1.default)();
 const port = 8000;
+app.use(express_1.default.json());
 app.get('/', (req, res) => {
     res.send('server running');
 });
+// CORS middleware
 const allowedOrigins = ['http://localhost:5173'];
 const options = {
     origin: allowedOrigins
 };
 app.use((0, cors_1.default)(options));
-app.use(express_1.default.json());
-app.listen(port, () => {
-    console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
-});
-app.post('/api', (req, res) => {
+const verifyJWT = function (req, res, next) {
     const token = req.headers.authorization;
-    if (token === undefined) {
-        throw Error("authorization header is undefined");
-    }
-    //try?
-    const publicKey = '-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAyTpJ/85vaSK9mThdN6M6X5tSb7HUcVQBk8m/ZIg6iVW4/tdzeuDhgC9WsfO5kBHks8kUe6PATiy5RU6JRttmisxsFiHd9yWys6A5JikB5aJirkEkvf5urCHB+b2zdaOOIv+rB82KQ4rLMoH/T4iPJ1MgM+T0Z62wOouuL83hIEkTr69xEg3qmiuPc8Pr1mcntV/O1OuP7UVpoaVIUJTEcUAasIEyzycPRJGrwbbw6EYN/23ULX/klEyKMz47+iZ2pJt9GJLPtkjBbsHs6iUeLBBaJ3+lRZmlyC/RoCJpkHrtUgapFUpymJmv7aWz3+AjouZUhxc0fT5RX/Ie3UrdAVRU+lV4LxVjpLAsA59XDVcspbkIoen0VYv/DKpHM0kEMNB3aUHvcHGmk+lcIPKGMh9m2AUCW7DuxwiNAW4JzEzzVSSpm/dtT8eApkq7t1WN2fNWnR2qecHQjSRsbJ7pW+aVsWen3QdoWAcrpjJD28c0Z20L8GU9U7nlqx0CYnXu2CvOU9fPSpz7ohwW2JaQc4A+mhqjHZEG9soUu5NmH3mM3BI4Z5iVb/rqsoWixuaLwvC+REVoCDiYKNgpAOfWVTD7ZHDa9c9FTi7jQNAsVC2UK+zx3BtF1s91tkIsYyc3d4ZNJeHJ+Ev9yMkOJP2FSIy52ukWuyIfUgludLMlgEcCAwEAAQ==\n-----END PUBLIC KEY-----';
-    // let decoded: DecodedToken;
     try {
-        var decoded = jsonwebtoken_1.default.verify(token, publicKey);
-        var decoded2 = decoded;
-        // var decoded = jwt.verify(token, publicKey);
-        console.log(decoded2.environment_id);
-        console.log(decoded2.verified_credentials[0].address);
+        if (token === undefined) {
+            throw Error('authorization header is undefined');
+        }
+        const decoded = jsonwebtoken_1.default.verify(token, dynamicPubKey);
+        console.log(decoded.environment_id); // debug
+        console.log(decoded.verified_credentials[0].address); // debug
     }
     catch (err) {
-        // 
+        console.log(err); // debug
+        // return res.status(401).json({ message: 'Invalid token' + err }) // TODO
+        next(err);
     }
-    // async???
-    // const options: VerifyOptions = {
-    //   complete: false
-    // };
-    // jwt.verify(token, publicKey, options, (err: VerifyErrors, decodedToken: DecodedToken) => {
-    //   if (err) {
-    //     console.log(err);
-    //   } else {
-    //     // resolve(decoded as DecodedToken); 
-    //     console.log(decodedToken.kid)
-    //   }
-    // });
+    console.log('verified'); // debug
+    next();
+};
+app.use(verifyJWT);
+// app.listen(port, () => {
+//   console.log(`⚡️[server]: Server is running at http://localhost:${port}`)
+// })
+(0, database_service_1.connectToDatabase)()
+    .then(() => {
+    app.use('/users', users_router_1.usersRouter);
+    app.listen(port, () => {
+        console.log(`Server started at http://localhost:${port}`);
+    });
+})
+    .catch((error) => {
+    console.error('Database connection failed', error);
+    process.exit();
 });
+// GetBalance: GET /get_balance
 function getAccountBalance(address) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -76,13 +83,43 @@ function getAccountBalance(address) {
     });
 }
 app.get('/get_balance', (req, res) => {
-    const address = '0x7155B442544B2e1eb5313c9A95f8c67192760B21';
+    const address = '0x7155B442544B2e1eb5313c9A95f8c67192760B21'; // TODO
     getAccountBalance(address)
         .then((balance) => {
         console.log(`Account balance: ${balance} ETH`);
-        res.json({ balance: balance });
+        res.json({ balance });
     })
         .catch((error) => {
         console.error('Failed to get account balance:', error);
     });
 });
+app.post('/send_tx', (req, res) => {
+    const { destination, amount } = req.body;
+    console.log(destination);
+    console.log(amount);
+});
+// // Create account / wallet
+// app.post('/create_wallet', (req: Request, res: Response) => {
+//   try {
+//     // Generate a new random private key
+//     const privateKey = ethers.Wallet.createRandom().privateKey;
+//     // Create a new wallet instance from the private key
+//     const wallet = new ethers.Wallet(privateKey);
+//     // Connect to MongoDB
+//     const client = await MongoClient.connect('mongodb://localhost:27017');
+//     const db = client.db('my-database');
+//     // Encrypt the private key
+//     const encryptedPrivateKey = encryptPrivateKey(privateKey);
+//     // Store the wallet in MongoDB
+//     await db.collection('wallets').insertOne({
+//       address: wallet.address,
+//       encryptedPrivateKey: encryptedPrivateKey,
+//     });
+//     console.log('New wallet created and stored successfully!');
+//   } catch (error) {
+//     console.error('An error occurred:', error);
+//   } finally {
+//     // Close the MongoDB connection
+//     client?.close();
+//   }
+// })
