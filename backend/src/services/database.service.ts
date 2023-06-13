@@ -4,13 +4,7 @@ import * as dotenv from 'dotenv'
 import type User from '../models/user'
 
 // Global Variables
-// export const collections: { users?: mongoDB.Collection } = {
-//   users:
-// }
-// export const collections = new mongoDB.Collection<User>()
-export interface collections {
-  users: mongoDB.Collection<User>
-}
+export const collections: { users?: mongoDB.Collection } = {}
 
 // Initialize Connection
 export async function connectToDatabase (): Promise<void> {
@@ -31,6 +25,7 @@ export async function connectToDatabase (): Promise<void> {
 
   const client: mongoDB.MongoClient = new mongoDB.MongoClient(dbConnString)
   await client.connect()
+
   const db: mongoDB.Db = client.db(process.env.DB_NAME)
   const usersCollection: mongoDB.Collection = db.collection(usersCollectionName)
 
