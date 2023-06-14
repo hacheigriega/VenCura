@@ -8,6 +8,7 @@ export default defineConfig({
       stream: 'stream-browserify',
     },
   },
+  envDir: './',
   plugins: [react()],
   optimizeDeps: {
     esbuildOptions: {

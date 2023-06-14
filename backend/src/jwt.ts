@@ -40,18 +40,13 @@ export const verifyJWT = async function (req: Request, res: Response, next: Next
     if (!user) {
       console.log('user not found...creating one')
       await CreateUser(decoded.sub, decoded.verified_credentials[0].address)
-    } else {
-      console.log('user found')
     }
-    // console.log(decoded.sub) // debug
-    // console.log(decoded.verified_credentials[0].address) // debug
-
     console.log('verified') // debug
+
     next()
-  } catch (err) {
-    console.log(err) // debug
-    // return res.status(401).json({ message: 'Invalid token' + err }) // TODO
-    next(err)
-    // res.status(401)
+  } catch (error) {
+    console.error(error)
+    // next(err)
+    res.status(401).json({ error })
   }
 }

@@ -30,9 +30,10 @@ async function getAccountBalance (address: string): Promise<string> {
 }
 
 walletsRouter.get('/get_balance/:address', (req: Request, res: Response) => {
+  console.log('getting balance')
+
   getAccountBalance(req.params.address)
     .then((balance) => {
-      console.log(`Account balance: ${balance} ETH`)
       res.json({ balance })
     })
     .catch((error) => {
@@ -46,7 +47,7 @@ walletsRouter.get('/get_wallets', async (req: Request, res: Response) => {
     res.status(200).json({ wallets })
   } catch (error) {
     console.error('Failed to get all wallets:', error)
-    throw error
+    // throw error
   }
 })
 
@@ -54,6 +55,9 @@ walletsRouter.post('/create_wallet', async (req: Request, res: Response) => {
   const id = req.id // user ID
   try {
     const user = await ReadUser(id)
+    if (!user) {
+      throw Error('user not found')
+    }
 
     // Generate a private key and create a wallet based on it
     const privateKey = ethers.Wallet.createRandom().privateKey
@@ -122,18 +126,16 @@ walletsRouter.post('/send_tx/:address', async (req: Request, res: Response) => {
     const provider = new ethers.providers.InfuraProvider('sepolia', INFURA_API_KEY)
     const senderWallet = new ethers.Wallet(pvtKey, provider)
 
-    // Create a new transaction object
     const tx = {
       to: destination,
-      value: ethers.utils.parseEther(amount.toString())
+      value: ethers.utils.parseEther(amount.toString()),
+      chainId: 11155111,
+      gasLimit: 21000,
+      gasPrice: await provider.getGasPrice()
     }
 
-    // Estimate the gas limit for the transaction
-    // const gasLimit = await senderWallet.estimateGas(tx)
-    // const signedTx = await senderWallet.sign(transaction)
-    // const transactionResponse = await provider.sendTransaction(signedTx)
-    // const receipt = await transactionResponse.wait()
-    // console.log(`Transaction confirmed in block ${receipt.blockNumber}`)
+    console.log('sending transaction') // debug
+    console.log(tx) // debug
 
     const txHash = await senderWallet.signTransaction(tx)
       .then(async (signedTx) => await provider.sendTransaction(signedTx))
@@ -146,7 +148,7 @@ walletsRouter.post('/send_tx/:address', async (req: Request, res: Response) => {
       })
     res.status(200).json({ txHash })
   } catch (error) {
-    console.error('Failed to send tx', error)
-    res.status(500).json(error)
+    console.error(error)
+    res.status(500).json({ msg: error.toString() })
   }
 })

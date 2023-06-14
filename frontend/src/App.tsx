@@ -3,39 +3,41 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useParams } from "react-router-dom";
 import './App.css'
 
+const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
+
 interface Wallet {
   address: string;
   privateKey: string;
 }
 
-// Obtain your public key from Dynamic's API dashboard or through our /keys API endpoint.
-// Get the JWT through the Dynamic SDK with authToken.
-// Send the authToken to the server as a Bearer token
 const Home = () => {
   const {
     handleLogOut,
     setShowAuthFlow,
     showAuthFlow,
     primaryWallet,
-    authToken
+    authToken,
+    isAuthenticated
   } = useDynamicContext();
 
   const [ wallets, setWallets ] = useState<Wallet[]>([]);
-  const [ isLoading, setIsLoading ] = useState<boolean>(true);
+  const [ fetched, setFetched ] = useState<boolean>(false);
+  
+  if (isAuthenticated) {
+    if (!fetched) {
+      console.log('fetching') // debug
+      setFetched(true)
 
-  useEffect(() => {
-    fetch("http://localhost:8000/wallets/get_wallets", { // TODO use env
+      fetch(`${BASE_URL}/wallets/get_wallets`, {
         method: 'GET',
         headers: {
           'Content-Type': "application/json",
           Authorization: `Bearer ${authToken}`,
         }
-    }).then((res) => res.json())
-    .then((data) => setWallets(data.wallets))
-    .then(() => setIsLoading(false));
-  }, []);
+      }).then((res) => res.json())
+      .then((data) => setWallets(data.wallets));
+    }
 
-  if (primaryWallet && !showAuthFlow) {
     return (
       <div>
         <h2>Your Wallet Addresses</h2>
@@ -97,7 +99,8 @@ const Home = () => {
   );
 };
 
-// getBalance() → balance: number (get the current balance on the wallet)
+// getBalance() → balance: number 
+// (Current balance on the wallet)
 const GetBalance = () => {
   const { authToken } = useDynamicContext();
   const [ balance, setBalance ] = useState<string | null>(null);
@@ -106,7 +109,7 @@ const GetBalance = () => {
   let { address } = useParams();
 
   useEffect(() => {
-    fetch("http://localhost:8000/wallets/get_balance/" + address, { // TODO use env
+    fetch(`${BASE_URL}/wallets/get_balance/` + address, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authToken}`,
@@ -129,7 +132,8 @@ const GetBalance = () => {
   );
 }
 
-// signMessage(msg: string) → signedMessage: string (The signed message with the private key) 
+// signMessage(msg: string) → signedMessage: string 
+// (Signed message with the private key) 
 const SignMessage = () => {
   const { authToken } = useDynamicContext();
   const [msg, setMsg] = useState<string>("");
@@ -142,7 +146,7 @@ const SignMessage = () => {
       message: msg,
     };
     try {
-      const response = await fetch('http://localhost:8000/wallets/sign_msg/' + address, { // TODO use env
+      const response = await fetch(`${BASE_URL}/wallets/sign_msg/` + address, {
         method: 'POST',
         headers: {
           'Content-Type': "application/json",
@@ -184,12 +188,14 @@ const SignMessage = () => {
 
 }
 
-// sendTransaction(to: string, amount: number) → transactionHash: string (sends a transaction on the blockchain)
+// sendTransaction(to: string, amount: number) → transactionHash: string 
+// (Sends a transaction on the blockchain)
 const SendTransaction = () => {
   const { authToken } = useDynamicContext();
   const [destination, setDestination] = useState<string>("");
   const [amount, setAmount] = useState<number>(0);
   const [ isSubmitted, setIsSubmitted ] = useState<boolean>(false);
+  const [ errorMsg, setErrorMsg ] = useState<string>("");
   const [ txHash, setTxHash ] = useState<string>("");
 
   let { address } = useParams();
@@ -203,7 +209,7 @@ const SendTransaction = () => {
       amount: amount,
     };
     try {
-      const response = await fetch('http://localhost:8000/wallets/send_tx/' + address, { // TODO use env
+      const response = await fetch(`${BASE_URL}/wallets/send_tx/` + address, {
         method: 'POST',
         headers: {
           'Content-Type': "application/json",
@@ -213,12 +219,11 @@ const SendTransaction = () => {
       });
 
       if (response.ok) {
-        const jsonData = await response.json()
+        await response.json()
           .then((data) => setTxHash(data.txHash));
-
-        console.log('POST request successful');
       } else {
-        console.error('POST request failed');
+        await response.json()
+          .then((data) => setErrorMsg(data.msg));
       }
     } catch (error) {
       console.error('Error:', error);
@@ -226,8 +231,12 @@ const SendTransaction = () => {
   };
 
   if (isSubmitted) {
-    if (txHash == "") {
-      return <div>Loading...</div>
+    if (txHash == "" && errorMsg == "") {
+      return <div>Processing transaction...</div>
+    } else if (errorMsg != "") {
+      return (
+        <div>{errorMsg}</div>
+      ); 
     } else {
       return (
         <div>Transaction hash: {txHash}</div>
@@ -258,14 +267,13 @@ const SendTransaction = () => {
   );
 }
 
-// getBalance() → balance: number (get the current balance on the wallet)
 const CreateWallet = () => {
   const { authToken } = useDynamicContext();
   const [ address, setAddress ] = useState<string | null>(null);
   const [ isLoading, setIsLoading ] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/wallets/create_wallet", { // TODO use env
+    fetch(`${BASE_URL}/wallets/create_wallet`, {
         method: 'POST',
         headers: {
           'Content-Type': "application/json",

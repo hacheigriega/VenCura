@@ -4,9 +4,6 @@ import type { User, Wallet } from '../models/user'
 export async function ReadUser (id: string): Promise<User> {
   try {
     const user = await collections.users!.findOne({ _id: id }) as User
-    if (!user) {
-      throw Error('user not found')
-    }
     return user
   } catch (error) {
     console.error('Failed to get user', error)
