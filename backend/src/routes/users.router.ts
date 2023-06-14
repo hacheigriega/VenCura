@@ -3,7 +3,6 @@ import { collections } from '../services/database.service'
 import { type User } from '../models/user'
 
 export const usersRouter = express.Router()
-
 // usersRouter.use(express.json())
 
 // GET

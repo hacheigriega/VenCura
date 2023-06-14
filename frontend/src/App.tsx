@@ -1,11 +1,11 @@
 import { DynamicContextProvider, DynamicWidget, useDynamicContext} from '@dynamic-labs/sdk-react';
 import { useEffect, useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import reactLogo from './assets/react.svg'
+import { BrowserRouter as Router, Routes, Route, Link, useParams } from "react-router-dom";
 import './App.css'
 
 interface Wallet {
   address: string;
+  privateKey: string;
 }
 
 // Obtain your public key from Dynamic's API dashboard or through our /keys API endpoint.
@@ -24,7 +24,7 @@ const Home = () => {
   const [ isLoading, setIsLoading ] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/get_wallets", { // TODO use env
+    fetch("http://localhost:8000/wallets/get_wallets", { // TODO use env
         method: 'GET',
         headers: {
           'Content-Type': "application/json",
@@ -34,16 +34,6 @@ const Home = () => {
     .then((data) => setWallets(data.wallets))
     .then(() => setIsLoading(false));
   }, []);
-
-  // useEffect(() => {
-  //   const fetchBalance = async () => {
-  //     if (primaryWallet) {
-  //       const value = await primaryWallet.connector.getBalance() as string;
-  //       setBalance(value);
-  //     }
-  //   };
-  //   fetchBalance();
-  // }, [primaryWallet]);
 
   if (primaryWallet && !showAuthFlow) {
     return (
@@ -64,25 +54,29 @@ const Home = () => {
                 <td>{wallet.address}</td>
                 <td>
                   <button type="button">
-                    <Link to="/get_balance">Get Balance</Link>
+                    <Link to={`/wallets/get_balance/${wallet.address}`}>Get Balance</Link>
                   </button>
                 </td>
                 <td>
-                  <button type="button">
-                    <Link to="/sign_msg">Sign Message</Link>
-                  </button>
+                  {wallet.privateKey != "" && (
+                    <button type="button">
+                      <Link to="/wallets/sign_msg">Sign Message</Link>
+                    </button>
+                  )}
                 </td>
                 <td>
-                  <button type="button">
-                    <Link to="/send_tx">Send Transaction</Link>
-                  </button>
+                  {wallet.privateKey != "" && (
+                    <button type="button">
+                      <Link to="/wallets/send_tx">Send Transaction</Link>
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
         <button type="button">
-          <Link to="/create_wallet">Create Wallet</Link> 
+          <Link to="/wallets/create_wallet">Create Wallet</Link> 
         </button>
         <button type="button" onClick={handleLogOut}>
           Log Out
@@ -109,8 +103,10 @@ const GetBalance = () => {
   const [ balance, setBalance ] = useState<string | null>(null);
   const [ isLoading, setIsLoading ] = useState<boolean>(true);
 
+  let { address } = useParams();
+
   useEffect(() => {
-    fetch("http://localhost:8000/get_balance", { // TODO use env
+    fetch("http://localhost:8000/wallets/get_balance/" + address, { // TODO use env
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authToken}`,
@@ -167,7 +163,7 @@ const SendTransaction = () => {
 
 
     try {
-      const response = await fetch('http://localhost:8000/send_tx', { // TODO use env
+      const response = await fetch('http://localhost:8000/wallets/send_tx', { // TODO use env
         method: 'POST',
         headers: {
           'Content-Type': "application/json",
@@ -217,7 +213,7 @@ const CreateWallet = () => {
   const [ isLoading, setIsLoading ] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/create_wallet", { // TODO use env
+    fetch("http://localhost:8000/wallets/create_wallet", { // TODO use env
         method: 'POST',
         headers: {
           'Content-Type': "application/json",
@@ -249,10 +245,10 @@ const App = () => (
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/get_balance" element={<GetBalance />} />
-        {/* <Route path="/sign_msg" element={<SignMessage />} /> */}
-        <Route path="/send_tx" element={<SendTransaction />} />
-        <Route path="/create_wallet" element={<CreateWallet />} />
+        <Route path="/wallets/get_balance/:address" element={<GetBalance />} />
+        {/* <Route path="/wallets/sign_msg" element={<SignMessage />} /> */}
+        <Route path="/wallets/send_tx" element={<SendTransaction />} />
+        <Route path="/wallets/create_wallet" element={<CreateWallet />} />
       </Routes>
     </Router>
   </DynamicContextProvider>
