@@ -1,3 +1,5 @@
+
+// Wallet is an address - private key pair
 export interface Wallet {
   address: string // wallet address
   privateKey: string // encrypted private key (empty if non-custodial wallet)

@@ -60,14 +60,14 @@ const Home = () => {
                 <td>
                   {wallet.privateKey != "" && (
                     <button type="button">
-                      <Link to="/wallets/sign_msg">Sign Message</Link>
+                      <Link to={`/wallets/sign_msg/${wallet.address}`}>Sign Message</Link>
                     </button>
                   )}
                 </td>
                 <td>
                   {wallet.privateKey != "" && (
                     <button type="button">
-                      <Link to="/wallets/send_tx">Send Transaction</Link>
+                      <Link to={`/wallets/send_tx/${wallet.address}`}>Send Transaction</Link>
                     </button>
                   )}
                 </td>
@@ -131,39 +131,18 @@ const GetBalance = () => {
 
 // signMessage(msg: string) → signedMessage: string (The signed message with the private key) 
 const SignMessage = () => {
-}
-
-// sendTransaction(to: string, amount: number) → transactionHash: string (sends a transaction on the blockchain)
-const SendTransaction = () => {
   const { authToken } = useDynamicContext();
-  const [ txhash, setTxhash ] = useState<string | null>(null);
-  const [ isLoading, setIsLoading ] = useState<boolean>(true);
-
-  const [destination, setDestination] = useState<string>();
-  const [amount, setAmount] = useState<number>();
+  const [msg, setMsg] = useState<string>("");
+  const [sign, setSign] = useState<string>("");
+  let { address } = useParams();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-
-    // const form = event.currentTarget
-    // const formElements = form.elements as typeof form.elements & {
-    //   destination: {value: string},
-    //   amount: {value: number},
-    // }
-    // onSubmitUsername(formElements.usernameInput.value)
-
-    console.log('destination ' + destination + ' amount ' + amount);
-
     const data = {
-      destination: destination,
-      amount: amount,
+      message: msg,
     };
-    
-    console.log('JSON ' + JSON.stringify(data));
-
-
     try {
-      const response = await fetch('http://localhost:8000/wallets/send_tx', { // TODO use env
+      const response = await fetch('http://localhost:8000/wallets/sign_msg/' + address, { // TODO use env
         method: 'POST',
         headers: {
           'Content-Type': "application/json",
@@ -173,8 +152,10 @@ const SendTransaction = () => {
       });
 
       if (response.ok) {
+        const jsonData = await response.json()
+          .then((data) => setSign(data.signature));
+
         console.log('POST request successful');
-        // Do something with the response if needed
       } else {
         console.error('POST request failed');
       }
@@ -186,10 +167,81 @@ const SendTransaction = () => {
   return (
     <form onSubmit={handleSubmit}>
       <label>
+          Message:&nbsp;&nbsp;
+          <input type="string" 
+              value={msg}
+              name="msg" 
+              onChange={(e) => setMsg(e.target.value)}/>
+      </label>
+      <br /><br />
+      <button type="submit">Submit</button>
+      <br /><br />
+      { sign != "" && (
+        <div>Signed message: {sign}</div>
+      )}
+    </form>
+  );
+
+}
+
+// sendTransaction(to: string, amount: number) → transactionHash: string (sends a transaction on the blockchain)
+const SendTransaction = () => {
+  const { authToken } = useDynamicContext();
+  const [destination, setDestination] = useState<string>("");
+  const [amount, setAmount] = useState<number>(0);
+  const [ isSubmitted, setIsSubmitted ] = useState<boolean>(false);
+  const [ txHash, setTxHash ] = useState<string>("");
+
+  let { address } = useParams();
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    setIsSubmitted(true)
+
+    event.preventDefault()
+    const data = {
+      destination: destination,
+      amount: amount,
+    };
+    try {
+      const response = await fetch('http://localhost:8000/wallets/send_tx/' + address, { // TODO use env
+        method: 'POST',
+        headers: {
+          'Content-Type': "application/json",
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const jsonData = await response.json()
+          .then((data) => setTxHash(data.txHash));
+
+        console.log('POST request successful');
+      } else {
+        console.error('POST request failed');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  if (isSubmitted) {
+    if (txHash == "") {
+      return <div>Loading...</div>
+    } else {
+      return (
+        <div>Transaction hash: {txHash}</div>
+      ); 
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <label>
           To:&nbsp;&nbsp;
           <input type="string" 
               value={destination}
-              name="decimal" 
+              name="destination" 
               onChange={(e) => setDestination(e.target.value)}/>
       </label>
       &nbsp;&nbsp;&nbsp;&nbsp;
@@ -197,7 +249,7 @@ const SendTransaction = () => {
           Amount:&nbsp;&nbsp;
           <input type="number" 
               value={amount}
-              name="hex" 
+              name="amount" 
               onChange={(e) => setAmount(parseFloat(e.target.value))}/>
       </label>
       <br /><br />
@@ -246,8 +298,8 @@ const App = () => (
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/wallets/get_balance/:address" element={<GetBalance />} />
-        {/* <Route path="/wallets/sign_msg" element={<SignMessage />} /> */}
-        <Route path="/wallets/send_tx" element={<SendTransaction />} />
+        <Route path="/wallets/sign_msg/:address" element={<SignMessage />} />
+        <Route path="/wallets/send_tx/:address" element={<SendTransaction />} />
         <Route path="/wallets/create_wallet" element={<CreateWallet />} />
       </Routes>
     </Router>
