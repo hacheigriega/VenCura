@@ -4,7 +4,10 @@ import { ethers } from 'ethers'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 import { connectToDatabase } from './services/database.service'
+import { GetWallets, ReadUser, UpdateUser, CreateUser } from './services/users.db'
 import { usersRouter } from './routes/users.router'
+import crypto from 'crypto'
+import { type Wallet } from './models/user'
 
 dotenv.config()
 
@@ -39,22 +42,36 @@ interface VerifiedCredential {
 }
 
 interface DecodedToken {
+  sub: string
   environment_id: string
   verified_credentials: VerifiedCredential[]
 }
 
-const verifyJWT = function (req: Request, res: Response, next: NextFunction): void {
-  const token = req.headers.authorization
-
+const verifyJWT = async function (req: Request, res: Response, next: NextFunction): Promise<void> {
+  const authHeader = req.headers.authorization
   try {
-    if (token === undefined) {
+    if (authHeader === undefined) {
       throw Error('authorization header is undefined')
     }
+    if (!authHeader.startsWith('Bearer ')) {
+      throw Error('authorization header does not start with Bearer')
+    }
 
+    const token = authHeader.substring(7, authHeader.length)
     const decoded = jwt.verify(token, dynamicPubKey) as DecodedToken
 
-    console.log(decoded.environment_id) // debug
-    console.log(decoded.verified_credentials[0].address) // debug
+    req.id = decoded.sub
+
+    // Store user in DB if not found
+    const user = await ReadUser(decoded.sub)
+    if (!user) {
+      console.log('user not found...creating one')
+      await CreateUser(decoded.sub, decoded.verified_credentials[0].address)
+    } else {
+      console.log('user found')
+    }
+    // console.log(decoded.sub) // debug
+    // console.log(decoded.verified_credentials[0].address) // debug
   } catch (err) {
     console.log(err) // debug
 
@@ -69,10 +86,6 @@ const verifyJWT = function (req: Request, res: Response, next: NextFunction): vo
 
 app.use(verifyJWT)
 
-// app.listen(port, () => {
-//   console.log(`⚡️[server]: Server is running at http://localhost:${port}`)
-// })
-
 connectToDatabase()
   .then(() => {
     app.use('/users', usersRouter)
@@ -85,6 +98,66 @@ connectToDatabase()
     console.error('Database connection failed', error)
     process.exit()
   })
+
+// Create wallet
+const ENCRYPTION_ALGORITHM = 'aes-256-cbc'
+const IV = '5183666c72eec9e4'
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY!
+
+function encrypt (data: string): string {
+  const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, ENCRYPTION_KEY, IV)
+  let encrypted = cipher.update(data, 'utf8', 'hex')
+  encrypted += cipher.final('hex')
+  return encrypted
+};
+
+function decrypt (data: string): string {
+  const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, ENCRYPTION_KEY, IV)
+  const decrypted = decipher.update(data, 'hex', 'utf8')
+  return decrypted + decipher.final('utf8')
+};
+
+app.post('/create_wallet', async (req: Request, res: Response) => {
+  const id = req.id
+  try {
+    const user = await ReadUser(id)
+    if (!user) {
+      throw Error('user not found')
+    }
+    // Generate a private key and create a wallet based on it
+    const privateKey = ethers.Wallet.createRandom().privateKey
+    const wallet = new ethers.Wallet(privateKey)
+    console.log(`New wallet address: ${wallet.address} Private key: ${privateKey}`)
+
+    // Encrypt the private key and add to user data
+    const encryptedPrivateKey = encrypt(privateKey)
+    const newWallet: Wallet = {
+      address: wallet.address,
+      privateKey: encryptedPrivateKey
+    }
+    user.wallets.push(newWallet)
+    await UpdateUser(id, user)
+
+    console.log('New wallet created and stored successfully!')
+    res.status(200).json({ address: wallet.address })
+  } catch (error) {
+    console.error('An error occurred:', error)
+    res.status(500).json(error)
+  }
+})
+
+// SendTransaction: POST /send_tx
+interface TxForm {
+  destination: string
+  amount: number
+}
+
+app.post('/send_tx', (req: Request, res: Response) => {
+  const { destination, amount }: TxForm = req.body
+
+  console.log(destination)
+  console.log(amount)
+})
 
 // GetBalance: GET /get_balance
 async function getAccountBalance (address: string): Promise<string> {
@@ -112,46 +185,12 @@ app.get('/get_balance', (req: Request, res: Response) => {
     })
 })
 
-// SendTransaction: POST /send_tx
-interface TxForm {
-  destination: string
-  amount: number
-}
-
-app.post('/send_tx', (req: Request, res: Response) => {
-  const { destination, amount }: TxForm = req.body
-
-  console.log(destination)
-  console.log(amount)
+app.get('/get_wallets', async (req: Request, res: Response) => {
+  try {
+    const wallets = await GetWallets(req.id)
+    res.status(200).json({ wallets })
+  } catch (error) {
+    console.error('Failed to get all wallets:', error)
+    throw error
+  }
 })
-
-// // Create account / wallet
-// app.post('/create_wallet', (req: Request, res: Response) => {
-//   try {
-//     // Generate a new random private key
-//     const privateKey = ethers.Wallet.createRandom().privateKey;
-
-//     // Create a new wallet instance from the private key
-//     const wallet = new ethers.Wallet(privateKey);
-
-//     // Connect to MongoDB
-//     const client = await MongoClient.connect('mongodb://localhost:27017');
-//     const db = client.db('my-database');
-
-//     // Encrypt the private key
-//     const encryptedPrivateKey = encryptPrivateKey(privateKey);
-
-//     // Store the wallet in MongoDB
-//     await db.collection('wallets').insertOne({
-//       address: wallet.address,
-//       encryptedPrivateKey: encryptedPrivateKey,
-//     });
-
-//     console.log('New wallet created and stored successfully!');
-//   } catch (error) {
-//     console.error('An error occurred:', error);
-//   } finally {
-//     // Close the MongoDB connection
-//     client?.close();
-//   }
-// })

@@ -4,6 +4,10 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import reactLogo from './assets/react.svg'
 import './App.css'
 
+interface Wallet {
+  address: string;
+}
+
 // Obtain your public key from Dynamic's API dashboard or through our /keys API endpoint.
 // Get the JWT through the Dynamic SDK with authToken.
 // Send the authToken to the server as a Bearer token
@@ -16,33 +20,69 @@ const Home = () => {
     authToken
   } = useDynamicContext();
 
-  const [balance, setBalance] = useState<string | null>(null);
+  const [ wallets, setWallets ] = useState<Wallet[]>([]);
+  const [ isLoading, setIsLoading ] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchBalance = async () => {
-      if (primaryWallet) {
-        const value = await primaryWallet.connector.getBalance() as string;
-        setBalance(value);
-      }
-    };
-    fetchBalance();
-  }, [primaryWallet]);
+    fetch("http://localhost:8000/get_wallets", { // TODO use env
+        method: 'GET',
+        headers: {
+          'Content-Type': "application/json",
+          Authorization: `Bearer ${authToken}`,
+        }
+    }).then((res) => res.json())
+    .then((data) => setWallets(data.wallets))
+    .then(() => setIsLoading(false));
+  }, []);
 
-  if (primaryWallet && !showAuthFlow) { // TODO
+  // useEffect(() => {
+  //   const fetchBalance = async () => {
+  //     if (primaryWallet) {
+  //       const value = await primaryWallet.connector.getBalance() as string;
+  //       setBalance(value);
+  //     }
+  //   };
+  //   fetchBalance();
+  // }, [primaryWallet]);
+
+  if (primaryWallet && !showAuthFlow) {
     return (
       <div>
-        <p>User is logged in</p>
-        <p>Address: {primaryWallet.address}</p>
-        <p>Balance: {balance}</p>
-        <p>AuthToken: {authToken}</p>
+        <h2>Your Wallet Addresses</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Wallet Address</th>
+              <th>Get Balance</th>
+              <th>Sign Message</th>
+              <th>Send Transaction</th>
+            </tr>
+          </thead>
+          <tbody>
+            {wallets.map((wallet) => (
+              <tr key={wallet.address}>
+                <td>{wallet.address}</td>
+                <td>
+                  <button type="button">
+                    <Link to="/get_balance">Get Balance</Link>
+                  </button>
+                </td>
+                <td>
+                  <button type="button">
+                    <Link to="/sign_msg">Sign Message</Link>
+                  </button>
+                </td>
+                <td>
+                  <button type="button">
+                    <Link to="/send_tx">Send Transaction</Link>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
         <button type="button">
-          <Link to="/get_balance">Get Balance</Link>
-        </button>
-        <button type="button">
-          <Link to="/sign_msg">Sign Message</Link> 
-        </button>
-        <button type="button">
-          <Link to="/send_tx">Send Transaction</Link> 
+          <Link to="/create_wallet">Create Wallet</Link> 
         </button>
         <button type="button" onClick={handleLogOut}>
           Log Out
@@ -50,6 +90,9 @@ const Home = () => {
       </div>
     );
   }
+
+  //       {/* <p>Address: {primaryWallet.address}</p> */}
+  //       {/* <p>AuthToken: {authToken}</p> */}
 
   return (
     <div>
@@ -70,7 +113,7 @@ const GetBalance = () => {
     fetch("http://localhost:8000/get_balance", { // TODO use env
         method: 'GET',
         headers: {
-          Authorization: `${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         }
     }).then((res) => res.json())
     .then((data) => setBalance(data.balance))
@@ -93,9 +136,6 @@ const GetBalance = () => {
 // signMessage(msg: string) → signedMessage: string (The signed message with the private key) 
 const SignMessage = () => {
 }
-
-
-
 
 // sendTransaction(to: string, amount: number) → transactionHash: string (sends a transaction on the blockchain)
 const SendTransaction = () => {
@@ -131,7 +171,7 @@ const SendTransaction = () => {
         method: 'POST',
         headers: {
           'Content-Type': "application/json",
-          Authorization: `${authToken}`
+          Authorization: `Bearer ${authToken}`
         },
         body: JSON.stringify(data),
       });
@@ -170,6 +210,37 @@ const SendTransaction = () => {
   );
 }
 
+// getBalance() → balance: number (get the current balance on the wallet)
+const CreateWallet = () => {
+  const { authToken } = useDynamicContext();
+  const [ address, setAddress ] = useState<string | null>(null);
+  const [ isLoading, setIsLoading ] = useState<boolean>(true);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/create_wallet", { // TODO use env
+        method: 'POST',
+        headers: {
+          'Content-Type': "application/json",
+          Authorization: `Bearer ${authToken}`,
+        }
+    }).then((res) => res.json())
+    .then((data) => setAddress(data.address))
+    .then(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+  if (!address) {
+    return (
+      <div>Failed to create a new wallet</div>
+    ); 
+  }
+  return (
+    <div>Newly created wallet address: {address}</div>
+  );
+}
+
 const App = () => (
   <DynamicContextProvider
     settings={{
@@ -181,7 +252,7 @@ const App = () => (
         <Route path="/get_balance" element={<GetBalance />} />
         {/* <Route path="/sign_msg" element={<SignMessage />} /> */}
         <Route path="/send_tx" element={<SendTransaction />} />
-        {/* Create account / wallet */}
+        <Route path="/create_wallet" element={<CreateWallet />} />
       </Routes>
     </Router>
   </DynamicContextProvider>
