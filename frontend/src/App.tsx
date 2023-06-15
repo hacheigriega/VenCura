@@ -4,7 +4,26 @@ import { BrowserRouter as Router, Routes, Route, Link, useParams } from "react-r
 import './App.css'
 
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
-console.log(`BASE URL ADDED ${BASE_URL}`)
+
+// Setting up list of evmNetworks
+const evmNetworks = [
+  {
+    blockExplorerUrls: ['https://sepolia.etherscan.io/'],
+    chainId: 11155111,
+    chainName: 'Ethereum Sepolia',
+    iconUrls: ['https://app.dynamic.xyz/assets/networks/eth.svg'],
+    nativeCurrency: {
+      decimals: 18,
+      name: 'Ether',
+      symbol: 'ETH',
+    },
+    networkId: 11155111,
+    rpcUrls: ['https://sepolia.infura.io/v3/91de7ed3c17344cc95f8ea31bf6b3adf'],
+    shortName: 'eth',
+    vanityName: 'Sepolia',
+  }
+];
+
 
 interface Wallet {
   address: string;
@@ -257,7 +276,7 @@ const SendTransaction = () => {
       &nbsp;&nbsp;&nbsp;&nbsp;
       <label>
           Amount:&nbsp;&nbsp;
-          <input type="number" 
+          <input type="number" step="any"
               value={amount}
               name="amount" 
               onChange={(e) => setAmount(parseFloat(e.target.value))}/>
@@ -301,7 +320,8 @@ const CreateWallet = () => {
 const App = () => (
   <DynamicContextProvider
     settings={{
-      environmentId: 'bcb3329d-6355-4410-bd2e-d9ff163a151e'
+      environmentId: 'bcb3329d-6355-4410-bd2e-d9ff163a151e',
+      evmNetworks,
     }}>
     <Router>
       <Routes>
