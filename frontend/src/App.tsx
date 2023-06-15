@@ -213,7 +213,7 @@ const SignMessage = () => {
 const SendTransaction = () => {
   const { authToken } = useDynamicContext();
   const [destination, setDestination] = useState<string>("");
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<string>("");
   const [ isSubmitted, setIsSubmitted ] = useState<boolean>(false);
   const [ errorMsg, setErrorMsg ] = useState<string>("");
   const [ txHash, setTxHash ] = useState<string>("");
@@ -276,10 +276,10 @@ const SendTransaction = () => {
       &nbsp;&nbsp;&nbsp;&nbsp;
       <label>
           Amount:&nbsp;&nbsp;
-          <input type="number" step="any"
+          <input type="string"
               value={amount}
               name="amount" 
-              onChange={(e) => setAmount(parseFloat(e.target.value))}/>
+              onChange={(e) => setAmount(e.target.value)}/>
       </label>
       <br /><br />
       <button type="submit">Submit</button>

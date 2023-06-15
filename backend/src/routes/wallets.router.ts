@@ -99,6 +99,7 @@ walletsRouter.post('/send_tx/:address', async (req: Request, res: Response) => {
     const id = req.id // user ID
     const address = req.params.address // wallet address
 
+    const ethAmount = ethers.utils.parseEther(amount.toString())
     if (!ethers.utils.isAddress(destination)) {
       throw Error(`Invalid destination address ${destination}`)
     }
@@ -114,12 +115,18 @@ walletsRouter.post('/send_tx/:address', async (req: Request, res: Response) => {
     const provider = new ethers.providers.InfuraProvider('sepolia', INFURA_API_KEY)
     const senderWallet = new ethers.Wallet(pvtKey, provider)
 
+    // nonce
+    const baseNonce = provider.getTransactionCount(wallet.address)
+    let nonceOffset = 0
+    const nonce = await baseNonce.then((nonce) => (nonce + (nonceOffset++)))
+
     const tx = {
       to: destination,
-      value: ethers.utils.parseEther(amount.toString()),
+      value: ethAmount,
       chainId: 11155111,
       gasLimit: 21000,
-      gasPrice: await provider.getGasPrice()
+      gasPrice: await provider.getGasPrice(),
+      nonce
     }
     console.log('Sending transaction:')
     console.log(tx)
