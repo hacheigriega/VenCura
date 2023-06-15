@@ -5,14 +5,16 @@ import { connectToDatabase } from './services/database.service'
 import { usersRouter } from './routes/users.router'
 import { walletsRouter } from './routes/wallets.router'
 import { verifyJWT } from './jwt'
+import { ALLOWED_ORIGIN } from './util/environment'
 
 dotenv.config()
+console.log(`Adding allowed origin ${ALLOWED_ORIGIN}`) // debug
 
 const app: Express = express()
 const port = 8000
-const allowedOrigins = ['http://localhost:5173']
+
 const options: cors.CorsOptions = {
-  origin: allowedOrigins
+  origin: ALLOWED_ORIGIN
 }
 
 connectToDatabase()

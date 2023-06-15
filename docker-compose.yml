@@ -1,0 +1,48 @@
+version: "3.8"
+
+networks:
+  vencura:
+    name: vencura
+
+services:
+  frontend:
+    container_name: frontend
+    image: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    ports:
+      - 3000:3000
+    expose:
+      - 3000
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - vencura
+
+  backend:
+    container_name: backend
+    image: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    expose:
+      - 8000
+    restart: unless-stopped
+    environment:
+      - AWS_PROFILE=${AWS_PROFILE}
+      - AWS_SHARED_CREDENTIALS_FILE=/app/.aws/credentials
+      - AWS_CONFIG_FILE=/app/.aws/config
+      - AWS_SDK_LOAD_CONFIG=1
+    volumes:
+      - $HOME/.aws/credentials:/app/.aws/credentials:ro
+      - $HOME/.aws/config:/app/.aws/config:ro
+      - ./backend:/app
+    networks:
+      - vencura

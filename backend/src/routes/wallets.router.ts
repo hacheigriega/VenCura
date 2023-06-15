@@ -6,7 +6,6 @@ import { type Wallet } from '../models/user'
 import { INFURA_API_KEY } from '../util/environment'
 
 export const walletsRouter = express.Router()
-// usersRouter.use(express.json())
 
 interface SignMsgForm {
   message: string
@@ -15,18 +14,6 @@ interface SignMsgForm {
 interface SendTxForm {
   destination: string
   amount: number
-}
-
-async function getAccountBalance (address: string): Promise<string> {
-  try {
-    const provider = new ethers.providers.InfuraProvider('sepolia', INFURA_API_KEY)
-    const balanceWei = await provider.getBalance(address)
-    const balanceEth = ethers.utils.formatEther(balanceWei)
-    return balanceEth
-  } catch (error) {
-    console.error('Failed to fetch account balance:', error)
-    throw error
-  }
 }
 
 walletsRouter.get('/get_balance/:address', (req: Request, res: Response) => {
@@ -52,19 +39,20 @@ walletsRouter.get('/get_wallets', async (req: Request, res: Response) => {
 })
 
 walletsRouter.post('/create_wallet', async (req: Request, res: Response) => {
-  const id = req.id // user ID
   try {
+    const id = req.id // user ID
+
     const user = await ReadUser(id)
     if (!user) {
       throw Error('user not found')
     }
 
-    // Generate a private key and create a wallet based on it
+    // generate a private key and create the wallet from it
     const privateKey = ethers.Wallet.createRandom().privateKey
     const wallet = new ethers.Wallet(privateKey)
     console.log(`New wallet address: ${wallet.address} Private key: ${privateKey}`)
 
-    // Encrypt the private key and add to user data
+    // encrypt the private key and add to user data
     const encryptedPrivateKey = encrypt(privateKey)
     const newWallet: Wallet = {
       address: wallet.address,
@@ -83,11 +71,11 @@ walletsRouter.post('/create_wallet', async (req: Request, res: Response) => {
 
 // Sign message using given address
 walletsRouter.post('/sign_msg/:address', async (req: Request, res: Response) => {
-  const address = req.params.address
-  const { message }: SignMsgForm = req.body
-  const id = req.id // user ID
-
   try {
+    const address = req.params.address
+    const { message }: SignMsgForm = req.body
+    const id = req.id // user ID
+
     // find given wallet and decrypt private key
     const wallet = await FindWallet(id, address)
     if (wallet == null) {
@@ -106,11 +94,11 @@ walletsRouter.post('/sign_msg/:address', async (req: Request, res: Response) => 
 })
 
 walletsRouter.post('/send_tx/:address', async (req: Request, res: Response) => {
-  const { destination, amount }: SendTxForm = req.body
-  const id = req.id // user ID
-  const address = req.params.address // wallet address
-
   try {
+    const { destination, amount }: SendTxForm = req.body
+    const id = req.id // user ID
+    const address = req.params.address // wallet address
+
     if (!ethers.utils.isAddress(destination)) {
       throw Error(`Invalid destination address ${destination}`)
     }
@@ -133,9 +121,8 @@ walletsRouter.post('/send_tx/:address', async (req: Request, res: Response) => {
       gasLimit: 21000,
       gasPrice: await provider.getGasPrice()
     }
-
-    console.log('sending transaction') // debug
-    console.log(tx) // debug
+    console.log('Sending transaction:')
+    console.log(tx)
 
     const txHash = await senderWallet.signTransaction(tx)
       .then(async (signedTx) => await provider.sendTransaction(signedTx))
@@ -152,3 +139,15 @@ walletsRouter.post('/send_tx/:address', async (req: Request, res: Response) => {
     res.status(500).json({ msg: error.toString() })
   }
 })
+
+async function getAccountBalance (address: string): Promise<string> {
+  try {
+    const provider = new ethers.providers.InfuraProvider('sepolia', INFURA_API_KEY)
+    const balanceWei = await provider.getBalance(address)
+    const balanceEth = ethers.utils.formatEther(balanceWei)
+    return balanceEth
+  } catch (error) {
+    console.error('Failed to fetch account balance:', error)
+    throw error
+  }
+}

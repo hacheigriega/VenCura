@@ -10,12 +10,13 @@ const database_service_1 = require("./services/database.service");
 const users_router_1 = require("./routes/users.router");
 const wallets_router_1 = require("./routes/wallets.router");
 const jwt_1 = require("./jwt");
+const environment_1 = require("./util/environment");
 dotenv_1.default.config();
+console.log(`Adding allowed origin ${environment_1.ALLOWED_ORIGIN}`); // debug
 const app = (0, express_1.default)();
 const port = 8000;
-const allowedOrigins = ['http://localhost:5173'];
 const options = {
-    origin: allowedOrigins
+    origin: environment_1.ALLOWED_ORIGIN
 };
 (0, database_service_1.connectToDatabase)()
     .then(() => {

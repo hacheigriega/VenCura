@@ -9,6 +9,9 @@ export default defineConfig({
     },
   },
   envDir: './',
+  define: {
+    'process.env': {}
+  },
   plugins: [react()],
   optimizeDeps: {
     esbuildOptions: {

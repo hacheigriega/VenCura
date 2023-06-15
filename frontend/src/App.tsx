@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useParams } from "react-r
 import './App.css'
 
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
+console.log(`BASE URL ADDED ${BASE_URL}`)
 
 interface Wallet {
   address: string;
@@ -40,7 +41,7 @@ const Home = () => {
 
     return (
       <div>
-        <h2>Your Wallet Addresses</h2>
+        <h2>Your Wallet Addresses (Sepolia)</h2>
         <table>
           <thead>
             <tr>
