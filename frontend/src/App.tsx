@@ -125,7 +125,6 @@ const GetBalance = () => {
   const { authToken } = useDynamicContext();
   const [ balance, setBalance ] = useState<string | null>(null);
   const [ isLoading, setIsLoading ] = useState<boolean>(true);
-
   let { address } = useParams();
 
   useEffect(() => {
@@ -144,11 +143,19 @@ const GetBalance = () => {
   }
   if (!balance) {
     return (
-      <div>Failed to obtain balance</div>
+      <div>Failed to obtain balance<br></br>
+        <button type="button">
+          <Link to={'/'}>Home</Link>
+        </button>
+      </div>
     ); 
   }
   return (
-    <div>Account balance: {balance} ETH</div>
+    <div>Account balance: {balance} ETH<br></br>
+      <button type="button">
+        <Link to={'/'}>Home</Link>
+      </button>
+    </div>
   );
 }
 
@@ -201,7 +208,11 @@ const SignMessage = () => {
       <button type="submit">Submit</button>
       <br /><br />
       { sign != "" && (
-        <div>Signed message: {sign}</div>
+        <div>Signed message: {sign}<br></br>
+        <button type="button">
+          <Link to={'/'}>Home</Link>
+        </button>
+        </div>
       )}
     </form>
   );
@@ -255,11 +266,19 @@ const SendTransaction = () => {
       return <div>Processing transaction...</div>
     } else if (errorMsg != "") {
       return (
-        <div>{errorMsg}</div>
+        <div>{errorMsg}<br></br>
+          <button type="button">
+            <Link to={'/'}>Home</Link>
+          </button>
+        </div>
       ); 
     } else {
       return (
-        <div>Transaction hash: {txHash}</div>
+        <div>Transaction hash: {txHash}<br></br>
+          <button type="button">
+            <Link to={'/'}>Home</Link>
+          </button>
+        </div>
       ); 
     }
   }
@@ -309,11 +328,19 @@ const CreateWallet = () => {
   }
   if (!address) {
     return (
-      <div>Failed to create a new wallet</div>
+      <div>Failed to create a new wallet<br></br>
+        <button type="button">
+          <Link to={'/'}>Home</Link>
+        </button>
+      </div>
     ); 
   }
   return (
-    <div>Newly created wallet address: {address}</div>
+    <div>Newly created wallet address: {address}<br></br>
+      <button type="button">
+        <Link to={'/'}>Home</Link>
+      </button>
+    </div>
   );
 }
 
