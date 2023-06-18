@@ -11,9 +11,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
     ports:
       - 3000:3000
     expose:
@@ -35,14 +32,5 @@ services:
     expose:
       - 8000
     restart: unless-stopped
-    environment:
-      - AWS_PROFILE=${AWS_PROFILE}
-      - AWS_SHARED_CREDENTIALS_FILE=/app/.aws/credentials
-      - AWS_CONFIG_FILE=/app/.aws/config
-      - AWS_SDK_LOAD_CONFIG=1
-    volumes:
-      - $HOME/.aws/credentials:/app/.aws/credentials:ro
-      - $HOME/.aws/config:/app/.aws/config:ro
-      - ./backend:/app
     networks:
       - vencura
