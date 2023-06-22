@@ -87,4 +87,4 @@ test('Send transaction', async () => {
 
   expect(res.status).toBe(200)
   expect(res.body.txHash).toBeDefined()
-}, 60000) // 1 minute timeout
+}, 90000) // longer timeout

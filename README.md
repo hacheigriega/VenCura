@@ -28,7 +28,7 @@ docker-compose up
 
 
 ### Running tests
-To run the backend tests that cover all routes, run the following commands from the project root:
+Make sure the environment has been set up properly. To run the backend tests that cover all routes, run the following commands from the project root:
 ```
 cd backend
 npm test
