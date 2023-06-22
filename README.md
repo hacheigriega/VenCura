@@ -15,6 +15,7 @@ Here are some other issues that must be addressed:
 - Authorization does not cause an error when Metamask is set to Ethereum mainnet instead of Sepolia testnet.
 - Authorization through Metamask QR code does not work.
 
+
 ### How to Build and Run Using Docker
 
 First, set up the environment for the project by creating two `.env` files — one in the `frontend` directory and another in the `backend` directory. Examples are provided by the `.env.example` files.
@@ -24,6 +25,7 @@ Then, to build and run containerized frontend and backend services, run the foll
 docker-compose build --no-cache frontend backend
 docker-compose up
 ```
+
 
 ### Running tests
 To run the backend tests that cover all routes, run the following commands from the project root:
