@@ -1,4 +1,6 @@
 # VenCura - A Custodial Wallet App
+
+### Overview
 The VenCura application is accessible [here](http://34.16.134.164:3000/). It currently supports the Ethereum Sepolia testnet only.
 
 VenCura is built using Typescript with an Express backend, React frontend, and a Mongo database. Here is an overview of how the app operates:
@@ -12,6 +14,16 @@ Here are some other issues that must be addressed:
 - React's `Link` component does not work reliably, especially in local environment. 
 - Authorization does not cause an error when Metamask is set to Ethereum mainnet instead of Sepolia testnet.
 - Authorization through Metamask QR code does not work.
+
+### How to Build and Run Using Docker
+
+First, set up the environment for the project by creating two `.env` files — one in the `frontend` directory and another in the `backend` directory. Examples are provided by the `.env.example` files.
+
+Then, to build and run containerized frontend and backend services, run the following commands:
+```
+docker-compose build --no-cache frontend backend
+docker-compose up
+```
 
 ### Running tests
 To run the backend tests that cover all routes, run the following commands from the project root:
