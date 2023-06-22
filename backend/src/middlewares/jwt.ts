@@ -1,7 +1,7 @@
 import { type Request, type Response, type NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
-import { ReadUser, CreateUser } from './services/users.db'
-import { DYNAMIC_PUB_KEY } from './util/environment'
+import { ReadUser, CreateUser } from '../services/users.db'
+import { DYNAMIC_PUB_KEY } from '../util/environment'
 
 // JWT verification middleware
 interface VerifiedCredential {
@@ -41,12 +41,10 @@ export const verifyJWT = async function (req: Request, res: Response, next: Next
       console.log('user not found...creating one')
       await CreateUser(decoded.sub, decoded.verified_credentials[0].address)
     }
-    console.log('verified') // debug
 
     next()
   } catch (error) {
     console.error(error)
-    // next(err)
     res.status(401).json({ error })
   }
 }

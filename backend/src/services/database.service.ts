@@ -16,3 +16,10 @@ export async function connectToDatabase (): Promise<void> {
   collections.users = usersCollection
   console.log(`Successfully connected to database: ${db.databaseName} and collection: ${usersCollection.collectionName}`)
 }
+
+export async function closeDatabase (): Promise<void> {
+  const client: mongoDB.MongoClient = new mongoDB.MongoClient(DB_CONN_STRING)
+  await client.close()
+
+  console.log(`Successfully closed connection to database collection: ${collections.users!.collectionName}`)
+}

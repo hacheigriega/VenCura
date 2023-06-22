@@ -17,11 +17,9 @@ interface SendTxForm {
 }
 
 walletsRouter.get('/get_balance/:address', (req: Request, res: Response) => {
-  console.log('getting balance')
-
   getAccountBalance(req.params.address)
     .then((balance) => {
-      res.json({ balance })
+      res.status(200).json({ balance })
     })
     .catch((error) => {
       console.error('Failed to get account balance:', error)
@@ -34,7 +32,6 @@ walletsRouter.get('/get_wallets', async (req: Request, res: Response) => {
     res.status(200).json({ wallets })
   } catch (error) {
     console.error('Failed to get all wallets:', error)
-    // throw error
   }
 })
 

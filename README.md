@@ -12,3 +12,10 @@ Here are some other issues that must be addressed:
 - React's `Link` component does not work reliably, especially in local environment. 
 - Authorization does not cause an error when Metamask is set to Ethereum mainnet instead of Sepolia testnet.
 - Authorization through Metamask QR code does not work.
+
+### Running tests
+To run the backend tests that cover all routes, run the following commands from the project root:
+```
+cd backend
+npm test
+```
